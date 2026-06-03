@@ -72,10 +72,10 @@ class Metrics:
                     rank = i
                     break
 
-            # Добавляем обратный ранг (или 0 если не нашли)
+
             if rank:
                 sum_reciprocal_ranks += 1.0 / rank
-            # else: добавляем 0 (неявно)
+            
 
         return sum_reciprocal_ranks / total
 
