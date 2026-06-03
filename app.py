@@ -12,7 +12,8 @@ from sentence_transformers import SentenceTransformer
 @st.cache_resource
 def load_model():
     print("Загрузка модели")
-    model = SentenceTransformer("data/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    name_model = "intfloat/multilingual-e5-small"
+    model = SentenceTransformer(f"data/models/{name_model}")
     print("Модель загружена")
     return model
 
@@ -75,6 +76,7 @@ if prompt:
         if answer == "error":
             answer = "Извините, я не отвечаю на подобного рода вопросы, может помочь чем-то ещё?"
             st.session_state.now_agent = "router_agent"
+            st.session_state.now_agent = router_agent(prompt)
 
     st.session_state.messages.append({"role": "assistant", "content": answer})
 
