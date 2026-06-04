@@ -3,12 +3,16 @@ from langchain.tools import tool
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 import arxiv
+import streamlit as st
 
 import API
 
 from parser import get_schedule, get_week_schedule
 import requests
 import json
+
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 
 _global_model = None
 _global_vector_store = None
@@ -24,22 +28,22 @@ llm_academic = GigaChat(
     verify_ssl_certs=False
 )
 
-'''@lru_cache(maxsize=1)
+@st.cache_resource
 def load_db():
     embeddings = HuggingFaceEmbeddings(
-        model_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+        model_name="intfloat/multilingual-e5-small",
+        cache_folder="data/data/models",
         model_kwargs={'device': 'cpu'},
-        encode_kwargs={'normalize_embeddings': True},
-        cache_folder='models/teach_model'
+        encode_kwargs={'normalize_embeddings': True}
     )
 
-    bd = Chroma(
-        persist_directory="data/data/teach_chroma_bd_",
+    db = Chroma(
+        persist_directory="data/chrome_storage",
         embedding_function=embeddings
     )
-    return bd
+    return db
 
-'''
+
 @tool(description="Поиск статей для выбранной темы диплома")
 def arxiv_search(query: str) -> str:
     print(f"Вызов arxiv_search с параметром {query}")
@@ -90,20 +94,41 @@ def schedule(name: str):
         json.dump(save_schedule, file, ensure_ascii=False, indent=4)
 
     lessons = get_week_schedule(save_schedule[id], "16.02")
+    # 16.02 для примера, сейчас пар не будет иначе
 
-    text_for_llm = format_schedule_text(parsed)
+    text = ''
+    for i, v in lessons.items():
+        para = list(v.values())[0]
+        arr = [[g['time'], g['address'][-4:]] for g in para]
+        text += f"{i}: {arr}\n"
+
+    text_for_llm = text
 
     print(f"[schedule]:\n {text_for_llm}")
 
     return text_for_llm
 
-'''@tool(description="Поиск преподавателя для диплома по названию предмета")
+@tool(description="Поиск преподавателя для диплома по названию предмета")
 def teacher_search(query: str):
-    print("Вызов teacher_search")
+    print(f"Вызов teacher_search {query}")
     db = load_db()
-    result = db.similarity_search(query, k=2)
-    return result
-'''
+    results = db.similarity_search(query, k=3)
+
+    text = ''
+
+    if not results:
+        print("Ничего не найдено")
+        return []
+
+    for i, doc in enumerate(results, 1):
+        teacher_name = doc.metadata['teacher_name']
+        course = doc.metadata['course']
+        text += f"{i}. {teacher_name} - курс: {course}\n"
+
+    print(f"Ответ: {text}")
+
+    return text
+
 
 @tool(description="Поиск информации в документах СПбГУ")
 def rag_search(query: str) -> str:
@@ -132,7 +157,7 @@ def rag_search(query: str) -> str:
 
     return output
 
-tools_academic = [arxiv_search, schedule]
+tools_academic = [arxiv_search, schedule, teacher_search]
 tools_rag = [rag_search]
 
 system_promp_1 = """
@@ -200,6 +225,8 @@ system_promt_0 = """
       Всегда возвращай ссылку на PDF статьи.
       
     - schedule(name): поиск преподавателя во времени, чтобы найти его на неделе (требуется имя препода)
+    
+    - 
     
     Помни: если не хватает данных для инструмента - запроси их. 
     Ты можешь отвечать только на темы: помочь с темой для диплома,

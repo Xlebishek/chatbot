@@ -68,6 +68,8 @@ def search(query: str):
     db = load_db()
     results = db.similarity_search(query, k=k)
 
+    text = ''
+
     if not results:
         print("Ничего не найдено")
         return []
@@ -75,7 +77,9 @@ def search(query: str):
     for i, doc in enumerate(results, 1):
         teacher_name = doc.metadata['teacher_name']
         course = doc.metadata['course']
-        print(f"{i}. {teacher_name} - курс: {course}")
+        text += f"{i}. {teacher_name} - курс: {course}\n"
+
+    print(text)
 
     return results
 

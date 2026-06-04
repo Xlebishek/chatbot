@@ -167,9 +167,14 @@ if __name__ == "__main__":
 
     print(save_schedule[id])
     lessons = get_week_schedule(save_schedule[id], "16.02")
-
+    print(lessons)
+    text = ''
     for i, v in lessons.items():
         para = list(v.values())[0]
+        arr = [[g['time'], g['address'][-4:]] for g in para]
+        text += f"{i}: {arr}\n"
+
+    print(text)
 
 
 
