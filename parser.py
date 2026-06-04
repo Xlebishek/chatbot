@@ -101,11 +101,11 @@ def get_week_schedule(schedule_dict, monday_date_str):
     Returns:
         dict: {date_str: {day_name: [lessons]}}
     """
-    # Парсим дату понедельника
+
     current_year = datetime.now().year
     monday_date = datetime.strptime(f"{current_year}.{monday_date_str}", "%Y.%d.%m")
 
-    # Генерируем все даты недели (пн-вс)
+
     week_dates = {}
     days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -114,7 +114,7 @@ def get_week_schedule(schedule_dict, monday_date_str):
         date_str = current_date.strftime("%d.%m")
         week_dates[date_str] = day_name
 
-    # Функция для проверки, входит ли дата в диапазон
+
     def is_date_in_range(date_str, range_str):
         try:
             if "–" in range_str:
@@ -133,13 +133,12 @@ def get_week_schedule(schedule_dict, monday_date_str):
                 return date_str == range_str
         except:
             return date_str == range_str
-
-    # Собираем расписание на неделю
+        
     result = {}
 
     for day_name, dates_dict in schedule_dict.items():
         for date_key, lessons in dates_dict.items():
-            # Проверяем, попадает ли дата в нашу неделю
+            # Попадает ли дата в неделю
             for week_date_str, week_day_name in week_dates.items():
                 if is_date_in_range(week_date_str, date_key) and day_name == week_day_name:
                     if week_date_str not in result:
@@ -170,5 +169,7 @@ if __name__ == "__main__":
     lessons = get_week_schedule(save_schedule[id], "16.02")
 
     for i, v in lessons.items():
-        print(f"{i}: {v}")
+        para = list(v.values())[0]
+
+
 

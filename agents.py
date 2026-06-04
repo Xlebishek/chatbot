@@ -6,7 +6,7 @@ import arxiv
 
 import API
 
-from parser import parse_timetable_page, format_schedule_text
+from parser import get_schedule, get_week_schedule
 import requests
 import json
 
@@ -78,9 +78,19 @@ def schedule(name: str):
     with open("data/json_files/teachers.json", 'r', encoding="utf-8") as file:
         save_schedule = json.load(file)
 
-    url = f"https://timetable.spbu.ru/EducatorEvents/{save_schedule[name.lower()]}"
-    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-    parsed = parse_timetable_page(response.text)
+    id = save_schedule[name.lower()]
+    url = f"https://timetable.spbu.ru/EducatorEvents/{id}"
+
+    if id not in save_schedule:
+        print("Вызов")
+        schedule = get_schedule(url)
+        save_schedule[id] = schedule
+
+    with open("data/json_files/schedule.json", "w", encoding="utf-8") as file:
+        json.dump(save_schedule, file, ensure_ascii=False, indent=4)
+
+    lessons = get_week_schedule(save_schedule[id], "16.02")
+
     text_for_llm = format_schedule_text(parsed)
 
     print(f"[schedule]:\n {text_for_llm}")
